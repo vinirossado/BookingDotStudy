@@ -107,6 +107,12 @@ docker exec booking-study-postgres psql -U booking -d booking_study \
   -c "select version, type from mt_events order by seq_id;"
 ```
 
+More ready-to-run queries (event history per reservation, counts by status,
+expanding the dependents JSONB array, pretty-printed snapshots, consistency
+cross-checks) live in [`db/queries.sql`](db/queries.sql). Open a psql shell with
+`docker exec -it booking-study-postgres psql -U booking -d booking_study` and
+paste from there.
+
 ## Prerequisites
 
 - .NET SDK **10.0.401** (see `global.json`)
