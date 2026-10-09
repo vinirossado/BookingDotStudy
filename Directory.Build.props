@@ -1,0 +1,17 @@
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <!-- Learning project: keep warnings honest but do not fail the build on them. -->
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FSharp.Core" />
+  </ItemGroup>
+
+  <!-- Disable tail-call optimization in Debug so breakpoints inside task/async CEs are hit -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+    <TailCalls>false</TailCalls>
+    <Optimize>false</Optimize>
+  </PropertyGroup>
+</Project>

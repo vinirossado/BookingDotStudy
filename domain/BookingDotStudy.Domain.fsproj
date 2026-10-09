@@ -1,0 +1,45 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>BookingDotStudy.Domain</RootNamespace>
+  </PropertyGroup>
+
+  <!--
+    F# compilation order is significant: a file can only reference types
+    declared in files listed ABOVE it. Mirror of Aurora's ordering:
+      Infrastructure -> Domain -> Commands -> Events -> Aggregate
+        -> Exceptions -> DomainService -> QueryService
+        -> MartenStoreConfiguration -> ConfigureServices
+  -->
+  <ItemGroup>
+    <!-- Generic, reusable event-sourcing infrastructure -->
+    <Compile Include="Infrastructure/FSharpOptionConverter.fs" />
+    <Compile Include="Infrastructure/SimpleEventStore.fs" />
+
+    <!-- Reservation aggregate (one namespace, split by concern) -->
+    <Compile Include="Aggregates/Reservation/ReservationDomain.fs" />
+    <Compile Include="Aggregates/Reservation/ReservationCommands.fs" />
+    <Compile Include="Aggregates/Reservation/ReservationEvents.fs" />
+    <Compile Include="Aggregates/Reservation/ReservationAggregate.fs" />
+    <Compile Include="Aggregates/Reservation/ReservationProjection.fs" />
+    <Compile Include="Aggregates/Reservation/ReservationExceptions.fs" />
+    <Compile Include="Aggregates/Reservation/ReservationDomainService.fs" />
+    <Compile Include="Aggregates/Reservation/ReservationQueryService.fs" />
+
+    <!-- Marten wiring + DI -->
+    <Compile Include="PostgresConfig.fs" />
+    <Compile Include="MartenStoreConfiguration.fs" />
+    <Compile Include="ConfigureServices.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Marten" />
+    <PackageReference Include="Marten.Newtonsoft" />
+    <PackageReference Include="Newtonsoft.Json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../shared/BookingDotStudy.Shared.fsproj" />
+  </ItemGroup>
+
+</Project>

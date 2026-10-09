@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <RootNamespace>BookingDotStudy.Api</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Endpoints/RouteHelpers.fs" />
+    <Compile Include="Endpoints/ReservationDtos.fs" />
+    <Compile Include="Endpoints/ReservationEndpoints.fs" />
+    <!-- Program.fs is always compiled LAST -->
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <PackageReference Include="Swashbuckle.AspNetCore" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../domain/BookingDotStudy.Domain.fsproj" />
+    <ProjectReference Include="../shared/BookingDotStudy.Shared.fsproj" />
+  </ItemGroup>
+
+</Project>

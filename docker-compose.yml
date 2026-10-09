@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: booking-study-postgres
+    environment:
+      POSTGRES_DB: booking_study
+      POSTGRES_USER: booking
+      POSTGRES_PASSWORD: booking
+    ports:
+      # Host 5433 -> container 5432 to avoid clashing with another local
+      # Postgres (e.g. Aurora) already bound to 5432.
+      - "5433:5432"
+    volumes:
+      - booking_study_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U booking -d booking_study"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  booking_study_pgdata:

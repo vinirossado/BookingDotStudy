@@ -1,0 +1,15 @@
+<Solution>
+  <Folder Name="/api/">
+    <Project Path="api/BookingDotStudy.Api.fsproj" />
+  </Folder>
+  <Folder Name="/domain/">
+    <Project Path="domain/BookingDotStudy.Domain.fsproj" />
+  </Folder>
+  <Folder Name="/shared/">
+    <Project Path="shared/BookingDotStudy.Shared.fsproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/BookingDotStudy.IntegrationTests/BookingDotStudy.IntegrationTests.fsproj" />
+    <Project Path="tests/BookingDotStudy.Tests/BookingDotStudy.Tests.fsproj" />
+  </Folder>
+</Solution>

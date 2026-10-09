@@ -1,0 +1,310 @@
+{
+  "info": {
+    "name": "BookingDotStudy API",
+    "description": "Event-sourced hotel Reservation API (F# + Marten 9 + PostgreSQL).\n\nQuick start:\n1. Start the stack: `docker compose up -d` then `dotnet run --project api/BookingDotStudy.Api.fsproj`.\n2. Select the \"BookingDotStudy - Local\" environment (or rely on the collection variable `baseUrl`).\n3. Run the requests top-to-bottom, or use the Collection Runner.\n\nThe `Create reservation` request saves the new id into the `reservationId` variable, so every following request targets it automatically. Error-case requests assert the expected 4xx responses.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "b00c57d1-1f4e-4a2e-9c0f-booking00study"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5080", "type": "string" },
+    { "key": "reservationId", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Health check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/health", "host": ["{{baseUrl}}"], "path": ["health"] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+              "pm.test('body is ok', function () { pm.expect(pm.response.text()).to.include('ok'); });"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "Create reservation",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"MainGuest\": {\n    \"FullName\": \"Alice Johnson\",\n    \"Email\": \"alice@example.com\",\n    \"Phone\": \"+1-555-0100\",\n    \"Document\": \"ID-12345\"\n  },\n  \"Room\": {\n    \"Number\": \"101\",\n    \"RoomType\": \"Standard\"\n  },\n  \"Dates\": {\n    \"CheckInDate\": \"2026-02-10\",\n    \"CheckOutDate\": \"2026-02-13\"\n  }\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/api/reservations", "host": ["{{baseUrl}}"], "path": ["api", "reservations"] },
+        "description": "Create a reservation (status Pending). Main guest FullName is required; Email/Phone/Document optional. Returns 201 with { id }. The test stores it in `reservationId`."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+              "var json = pm.response.json();",
+              "pm.test('has id', function () { pm.expect(json.id).to.be.a('string').and.not.empty; });",
+              "pm.collectionVariables.set('reservationId', json.id);",
+              "if (pm.environment.name) { pm.environment.set('reservationId', json.id); }",
+              "console.log('Saved reservationId =', json.id);"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "List reservations",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/api/reservations", "host": ["{{baseUrl}}"], "path": ["api", "reservations"] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+              "pm.test('body is an array', function () { pm.expect(pm.response.json()).to.be.an('array'); });"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "Get reservation by id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/api/reservations/{{reservationId}}", "host": ["{{baseUrl}}"], "path": ["api", "reservations", "{{reservationId}}"] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+              "var json = pm.response.json();",
+              "pm.test('ids match', function () { pm.expect(json.id).to.eql(pm.variables.get('reservationId')); });",
+              "pm.test('nights computed', function () { pm.expect(json.nights).to.eql(3); });"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "Add dependent",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"FullName\": \"Tommy Johnson\",\n  \"Age\": 8\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/api/reservations/{{reservationId}}/dependents", "host": ["{{baseUrl}}"], "path": ["api", "reservations", "{{reservationId}}", "dependents"] },
+        "description": "Add a dependent (child/partner). Only FullName is required; Document/Age optional. Allowed while the reservation is Pending/Confirmed/CheckedIn."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": ["pm.test('status is 200', function () { pm.response.to.have.status(200); });"]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "Change room",
+      "request": {
+        "method": "PUT",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"Room\": {\n    \"Number\": \"900\",\n    \"RoomType\": \"Suite\"\n  }\n}" },
+        "url": { "raw": "{{baseUrl}}/api/reservations/{{reservationId}}/room", "host": ["{{baseUrl}}"], "path": ["api", "reservations", "{{reservationId}}", "room"] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+              "pm.test('updated flag present', function () { pm.expect(pm.response.json()).to.have.property('updated'); });"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "Reschedule stay",
+      "request": {
+        "method": "PUT",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"Dates\": {\n    \"CheckInDate\": \"2026-03-01\",\n    \"CheckOutDate\": \"2026-03-06\"\n  }\n}" },
+        "url": { "raw": "{{baseUrl}}/api/reservations/{{reservationId}}/dates", "host": ["{{baseUrl}}"], "path": ["api", "reservations", "{{reservationId}}", "dates"] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": ["pm.test('status is 200', function () { pm.response.to.have.status(200); });"]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "Confirm reservation",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/api/reservations/{{reservationId}}/confirm", "host": ["{{baseUrl}}"], "path": ["api", "reservations", "{{reservationId}}", "confirm"] },
+        "description": "Pending -> Confirmed. Idempotent (updated:false if already confirmed)."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": ["pm.test('status is 200', function () { pm.response.to.have.status(200); });"]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "Check in",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/api/reservations/{{reservationId}}/check-in", "host": ["{{baseUrl}}"], "path": ["api", "reservations", "{{reservationId}}", "check-in"] },
+        "description": "Pending/Confirmed -> CheckedIn (records checkedInAt)."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": ["pm.test('status is 200', function () { pm.response.to.have.status(200); });"]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "Check out",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/api/reservations/{{reservationId}}/check-out", "host": ["{{baseUrl}}"], "path": ["api", "reservations", "{{reservationId}}", "check-out"] },
+        "description": "CheckedIn -> CheckedOut (records checkedOutAt)."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": ["pm.test('status is 200', function () { pm.response.to.have.status(200); });"]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "Remove dependent",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/api/reservations/{{reservationId}}/dependents/Tommy Johnson", "host": ["{{baseUrl}}"], "path": ["api", "reservations", "{{reservationId}}", "dependents", "Tommy Johnson"] },
+        "description": "Remove a dependent by full name. Returns 404 if the dependent is not on the reservation."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": ["pm.test('status is 200', function () { pm.response.to.have.status(200); });"]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "Cancel after checkout (expect 409)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"Reason\": \"too late\"\n}" },
+        "url": { "raw": "{{baseUrl}}/api/reservations/{{reservationId}}/cancel", "host": ["{{baseUrl}}"], "path": ["api", "reservations", "{{reservationId}}", "cancel"] },
+        "description": "Cancelling a reservation that is already CheckedOut is an invalid status transition -> 409 Conflict. Run after Check out."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": ["pm.test('status is 409', function () { pm.response.to.have.status(409); });"]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "Get unknown reservation (expect 404)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/api/reservations/does-not-exist", "host": ["{{baseUrl}}"], "path": ["api", "reservations", "does-not-exist"] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": ["pm.test('status is 404', function () { pm.response.to.have.status(404); });"]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "Create with checkout before checkin (expect 400)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"MainGuest\": { \"FullName\": \"Bob\" },\n  \"Room\": { \"Number\": \"102\", \"RoomType\": \"Standard\" },\n  \"Dates\": { \"CheckInDate\": \"2026-02-10\", \"CheckOutDate\": \"2026-02-10\" }\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/api/reservations", "host": ["{{baseUrl}}"], "path": ["api", "reservations"] },
+        "description": "Validation lives in Reservation.handle: check-out must be after check-in -> 400 Bad Request."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": ["pm.test('status is 400', function () { pm.response.to.have.status(400); });"]
+          }
+        }
+      ],
+      "response": []
+    }
+  ]
+}
